@@ -56,27 +56,30 @@ class Bidder:
         self.Q_log_filename = os.path.join("logs", self.name + "_Q_log" + ".csv")
         # self.Q_log_fields = sorted(self.valid_actions)
         self.Q_log_fields = ['{:.0f}'.format(x) for x in sorted(self.valid_actions)]
-        self.Q_log_fields.insert(0, "Run")
+        self.Q_log_fields.insert(0, "run_phase")
         self.Q_log_file = open(self.Q_log_filename, 'w', newline='')
         self.Q_log_writer = csv.DictWriter(self.Q_log_file,
                                            fieldnames=self.Q_log_fields)
         self.Q_log_writer.writeheader()
 
-    def reset(self, destination=None, testing=False, mixing = False):
+    def reset(self, phase):
         """ The reset function is called at the beginning of each trial.
             'testing' is set to True if testing trials are being used
             once training trials have completed. """
-        if testing==True:
+        if phase == "testing":
             self.epsilon = 0
             self.alpha = 0
-        elif mixing == True:
+        elif phase == "mixing":
             self.epsilon = 0.5
-        else:
+        elif phase == "training":
             # self.epsilon=self.epsilon - 0.05
             # self.epsilon=self.epsilon - 0.0015833333  # linear epsilon
             # self.epsilon = np.exp(-1.0/00 * self.t)  # Exponential decaying epsilon
             self.epsilon = 1.0  # Constant
             # self.t += 1
+        else:
+            print("Issue detected, phase not recognized.")
+            print("Current phase set to: ", phase)
 
         return None
 
@@ -125,14 +128,9 @@ class Bidder:
     def choose_action(self, state):
         """ The choose_action function is called when the agent is asked to choose
             which action to take, based on the 'state' the smartcab is in. """
-        # Set the agent state and default action
+
         self.state = state
         action = None
-
-        # When not learning, choose a random action
-        # When set to fixed bid, choose that
-        # When training or mixing, choose a random action with 'epsilon' probability
-        # Otherwise, choose an action with the highest Q-value for the current state
 
         if (self.learning == False or random.uniform(0, 1) < self.epsilon) and self.fixed_bid == False :
             action = random.choice(self.valid_actions)
@@ -147,8 +145,6 @@ class Bidder:
 
     def draw_value(self):
         self.v_ablock = random.choice(self.valid_values)
-        # print(self.name + " drawing random value")
-        # print("Random value: " + str(self.v_ablock))
         return None
 
 
@@ -167,10 +163,10 @@ class Bidder:
         self.table_file.close()
 
 
-    def write_Q_log(self, run):
+    def write_Q_log(self, run_phase):
         for state in self.Q:
             # print(dict({"Run":run}, **self.Q[state]))
-            self.Q_log_writer.writerow(dict({"Run":run}, **self.Q[state]))
+            self.Q_log_writer.writerow(dict({"run_phase": run_phase}, **self.Q[state]))
         return None
 
 

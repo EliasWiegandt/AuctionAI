@@ -11,29 +11,28 @@ np.random.seed(10)
 random.seed(a=10)
 
 training_simulations = 5000
-convergence_window = 100000
-QConvStep = int(convergence_window / 50)
-check_convergence = True
 mixed_simulations = 0
 test_simulations = 0
 
-SigLev = 0.01
-alpha = 0.0001
+convergence_window = 100000
+QConvStep = int(convergence_window / 50)
+
 print_trials = False
 visualizeQ = True
+check_convergence = True
+write_logs = True
+run = True
+global_value = False
+
+SigLev = 0.01
+alpha = 0.0001
 v_mid_ablock = 100
 a_min_price = 0
 n_ablocks = 4
 n_actions = 2
 actions_intervals = 5
 n_values = 4
-values_intervals = 0.5
-write_logs = True
-run = True
-global_value = False
-# possible_values = range(v_mid_ablock - actions_intervals * n_actions,
-#                         v_mid_ablock + actions_intervals * (n_actions + 1),
-#                         actions_intervals)
+values_intervals = 2
 
 # Set path for working directory
 abspath = os.path.abspath(__file__)
@@ -162,29 +161,15 @@ def learning_phase(bidders, n_ablocks, p_ablocks, p_ablock):
 
 def run(bidders, trainruns, mixedruns, testruns):
     max_runs = [trainruns, mixedruns, testruns]
-    phases = ["Training", "Mixing", "Testing"]
+    phases = ["training", "mixing", "testing"]
 
-    for phase, max_run in enumerate(max_runs):
-        run = 0
-        if phase == 0:
-            training = True
-            mixing = False
-            testing = False
-            training_converged = False
-        elif phase == 1:
-            training = False
-            mixing = True
-            testing = False
-            training_converged = False
-        elif phase == 2:
-            training = False
-            mixing = False
-            testing = True
-            training_converged = False
-        else:
-            print("Problems with phases!")
+    for phase, max_run in zip(phases, max_runs):
+        print(phase)
+        run_phase = 0
+        run_total = 0
+        training_converged = False
 
-        while run < max_run and training_converged == False:
+        while run_phase < max_run and (training_converged == False or phase != "training"):
             # Run round 1
             b_ablocks, n_ablocks, p_ablocks, p_ablock = r1_run(bidders, run)
 
@@ -193,18 +178,18 @@ def run(bidders, trainruns, mixedruns, testruns):
 
             # Reset bidders' parameters
             for bidder in bidders:
-                bidder.reset(testing = testing, mixing = mixing)
+                bidder.reset(phase)
 
             # Write logs
             if write_logs:
-                log.write_run_log(bidders, run, phases[phase], n_ablocks, p_ablocks, p_ablock)
+                log.write_run_log(bidders, run, phase, n_ablocks, p_ablocks, p_ablock)
                 for bidder in bidders:
-                    bidder.write_Q_log(run)
+                    bidder.write_Q_log(run_phase)
 
             # Finish training, if converged
-            if training == True and check_convergence == True:
-                if np.fmod(run + 1, convergence_window) == 0:
-                    print("About to ADF")
+            if phase == "training" and check_convergence == True:
+                if np.fmod(run_phase + 1, convergence_window) == 0:
+                    print("Testing for convergence")
                     time_start_adf = timeit.default_timer()
                     unconverged = 0
                     for bidder in bidders:
@@ -240,7 +225,8 @@ def run(bidders, trainruns, mixedruns, testruns):
                 print("")
 
             # Increment run
-            run += 1
+            run_phase += 1
+            run_total += 1
 
     # Write the Q tables to a file, close other logs
     log.run_log_file.close()
@@ -265,14 +251,14 @@ if visualizeQ:
     plt2 = av.visualize_Convergence(bidders)
     # plt3 = av.visualize_prop_reward(log.run_log_filename, bidders)
     # plt4 = av.visualize_rewards(log.run_log_filename, bidders)
-    # plt5 = av.visualize_rewards_violin(log.run_log_filename, bidders)
+    plt5 = av.visualize_rewards_violin(log.run_log_filename, bidders)
     # plt6 = av.visualize_uncertain_rewards(log.run_log_filename, bidders)
-    
+
     plt1.show()
     plt2.show()
     # plt3.show()
     # plt4.show()
-    # plt5.show()
+    plt5.show()
     # plt6.show()
 
 time_complete = timeit.default_timer()

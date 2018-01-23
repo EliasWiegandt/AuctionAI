@@ -6,15 +6,7 @@ class Auction:
     def __init__(self):
         self.a_min_price = 50
         self.n_ablocks = 1
-        self.ablocks_size = 10
 
-        self.b_min_price = 25
-        self.bblocks_number = 7
-        self.bblocks_size = 5
-
-        self.C1_min_price = 0
-        self.C2_min_price = 0
-        self.C3_min_price = 0
 
     def r1(self, bool_abids, b_ablocks):
         """

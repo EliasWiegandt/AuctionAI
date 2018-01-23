@@ -33,7 +33,7 @@ def visualizeQ(bidders,
         plt.subplot(1, n_bidders, index+1, sharex=ax1, sharey=ax1)
         bars = plt.bar(x, y, width=bidder.actions_intervals, edgecolor='black')
         mid_bar = math.floor(len(bars)/2)
-        mid_bar = 1
+        # mid_bar = 1
         bars[mid_bar].set_color('black')
         plt.title(bidder.name)
 
@@ -50,11 +50,12 @@ def visualize_Convergence(bidders):
     ax1 = plt.subplot(111)
     for index, bidder in enumerate(bidders):
         # Q_log_data = pd.read_csv(bidder.Q_log_filename, skip_blank_lines=False)
-        Q_log_data = pd.read_csv(bidder.Q_log_filename, index_col=0)
+        Q_log_data = pd.read_csv(bidder.Q_log_filename,
+                                 index_col=0,
+                                 skip_blank_lines=False)
         plt.subplot(1, n_bidders, index+1, sharex=ax1, sharey=ax1)
         plot = plt.plot(Q_log_data)
         plt.title(bidder.name)
-    # filename = os.path.join("charts", )
     plt.savefig(os.path.join("charts", 'Q_convergence.png'))
     plt.draw()
     return plt
@@ -112,7 +113,6 @@ def visualize_rewards(run_log_filename, bidders):
         x = bidder_grouped['b_ablock']
         y = bidder_grouped['reward']
         ste_y = bidder_grouped['reward_sem']*1.96
-        # ste_y = bidder_grouped['reward_std']
         plt.subplot(1, n_bidders, index+1, sharex=ax1, sharey=ax1)
         bars = plt.bar(x, y, yerr=ste_y, width=bidder.actions_intervals, edgecolor='black', ecolor='red',)
         mid_bar = math.floor(len(bars)/2)
@@ -172,7 +172,6 @@ def visualize_rewards_violin_by_bidder(run_log_filename, bidders):
     return plt
 
 def visualize_rewards_violin(run_log_filename, bidders):
-    print("In violin")
     n_bidders = len(bidders)
     fig, axes = plt.subplots(1, 1)
     title = "Reward distribution"
