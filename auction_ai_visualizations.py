@@ -6,10 +6,7 @@ import seaborn as sns
 import os
 # sns.set(style="whitegrid", palette="pastel", color_codes=True)
 
-def visQ(bidders,
-               auction,
-               runtotal
-               ):
+def visQ(bidders, auction, runtotal):
     nbidders = len(bidders)
     fig, ax = plt.subplots()
     specs = (str(nbidders),
@@ -30,11 +27,11 @@ def visQ(bidders,
         plt.subplot(1, nbidders, ix+1, sharex=ax1, sharey=ax1)
         width = (max(bidder.bidspace)-min(bidder.bidspace))/(len(bidder.bidspace))
         bars = plt.bar(x, y, width = width, edgecolor='black')
-        midbar = math.floor(len(bars)/2)
-        bars[midbar].set_color('black')
+        # midbar = math.floor(len(bars)/2)
+        # bars[midbar].set_color('black')
         plt.title(bidder.name)
 
-    plt.savefig(os.path.join("charts", 'Qfinal.png'))
+    plt.savefig(os.path.join("charts", 'Qfinal.png'), bbox_inches='tight')
     plt.draw()
     return plt
 
@@ -54,7 +51,7 @@ def visconv(bidders):
         plt.subplot(1, nbidders, ix+1, sharex = ax1, sharey = ax1)
         plot = plt.plot(Qlogdata)
         plt.title(bidder.name)
-    plt.savefig(os.path.join("charts", 'Qconv.png'))
+    plt.savefig(os.path.join("charts", 'Qconv.png'), bbox_inches='tight')
     plt.draw()
     return plt
 
@@ -90,7 +87,7 @@ def vispropreward(runlogname, bidders):
         mid_bar = math.floor(len(bars)/2)
         bars[mid_bar].set_color('black')
         plt.title(bidder.name)
-    plt.savefig(os.path.join("charts", 'prop_dev.png'))
+    plt.savefig(os.path.join("charts", 'prop_dev.png'), bbox_inches='tight')
     plt.draw()
     return plt
 
@@ -117,7 +114,7 @@ def visrewards(run_log_filename, bidders):
         bars[mid_bar].set_color('black')
         plt.title(bidder.name)
         quantiles=bidderdata['reward'].quantile([0.025, 0.975])
-    plt.savefig(os.path.join("charts", 'rew_est.png'))
+    plt.savefig(os.path.join("charts", 'rew_est.png'), bbox_inches='tight')
     plt.draw()
     return plt
 
@@ -128,18 +125,18 @@ def visuncertainrewards(run_log_filename, bidders):
     bidderdata = logdata.where(logdata.name == bidder.name).dropna(axis=0, how='any')
     bidderdata['reward_std']=bidderdata['reward']
     bidderdata['reward_n']=bidderdata['reward']
-    univals = sorted(bidderdata["valspace"].unique())
+    univals = sorted(bidder.valspace)
     columns = 5.0
     rows = math.ceil(len(univals)/columns)
     fig, ax = plt.subplots()
     ax1 = plt.subplot(111)
-    title = bidder.name + ": reward given v_ablock"
+    title = bidder.name + ": reward given value of good"
     fig.suptitle(title, fontsize=12)
 
     for ix, value in enumerate(univals):
         plt.subplot(rows, columns, ix+1, sharex=ax1, sharey=ax1)
-        bidder_value = bidderdata[['valgood', 'bid', 'reward', 'reward_std', 'reward_n']].where(bidderdata['valgood'] == value).dropna(axis=0, how='any')
-        biddergrouped = bidder_value[['valgood', 'bid', 'reward', 'reward_std', 'reward_n']].groupby(by = ["bid"], as_index=False).agg({'valgood': np.mean, 'reward': np.mean, 'reward_std': np.std, 'reward_n': 'count'})
+        bidderval = bidderdata[['valgood', 'bid', 'reward', 'reward_std', 'reward_n']].where(bidderdata['valgood'] == value).dropna(axis=0, how='any')
+        biddergrouped = bidderval[['valgood', 'bid', 'reward', 'reward_std', 'reward_n']].groupby(by = ["bid"], as_index=False).agg({'valgood': np.mean, 'reward': np.mean, 'reward_std': np.std, 'reward_n': 'count'})
         biddergrouped['reward_sem'] =  biddergrouped['reward_std'] / np.sqrt(biddergrouped['reward_n'])
         x = biddergrouped['bid']
         y = biddergrouped['reward']
@@ -147,12 +144,11 @@ def visuncertainrewards(run_log_filename, bidders):
         width = (max(bidder.bidspace) - min(bidder.bidspace)) / (len(bidder.bidspace))
         bars = plt.bar(x, y, yerr=sey, width = width, edgecolor='black', ecolor='red',)
         plt.title("value of good: " + str(value))
-    plt.savefig(os.path.join("charts", 'state_rew_est.png'))
+    plt.savefig(os.path.join("charts", 'state_rew_est.png'), bbox_inches='tight')
     plt.show()
     return plt
 
 def visualize_rewards_violin_by_bidder(run_log_filename, bidders):
-    print("In violin")
     nbidders = len(bidders)
     fig, axes = plt.subplots(1, nbidders)
     title = "Reward distribution"
@@ -164,21 +160,20 @@ def visualize_rewards_violin_by_bidder(run_log_filename, bidders):
                        y="reward",
                        data=bidderdata,
                        ax = axes[ix])
-    plt.savefig(os.path.join("charts", 'rew_bybidder_violin.png'))
+    plt.savefig(os.path.join("charts", 'rew_bybidder_violin.png'), bbox_inches='tight')
     plt.draw()
     return plt
 
-def visviolin(run_log_filename, bidders):
-    nbidders = len(bidders)
+def visviolin(logpath):
     fig, axes = plt.subplots(1, 1)
     title = "Reward distribution"
     fig.suptitle(title, fontsize=12)
-    logdata = pd.read_csv(run_log_filename, skip_blank_lines=False)
+    logdata = pd.read_csv(logpath, skip_blank_lines=False)
     ax = sns.violinplot(x="bid",
                    y="reward",
                    data=logdata,
                    inner="box",
                    )
-    plt.savefig(os.path.join("charts", 'rew_violin.png'))
+    plt.savefig(os.path.join("charts", 'rew_violin.png'), bbox_inches='tight')
     plt.draw()
     return plt

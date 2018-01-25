@@ -1,6 +1,6 @@
 import random
 import matplotlib.pyplot as plt
-import timeit
+import timeit as t
 import numpy as np
 import pandas as pd
 import auction_ai_visualizations as av
@@ -71,7 +71,7 @@ class auctionsimulator:
         return None
 
 
-    def writeroundlog(self, runtotal, phase, bids, ngoods, prices, rewards):
+    def writeroundlog(self, runtotal, phase, bids, ngoods, prices, valgoods, rewards):
         self.log.writerunlog(self.bidders,
                              runtotal,
                              phase,
@@ -85,25 +85,25 @@ class auctionsimulator:
         return None
 
 
-    def checkconv(self):
+    def checkconv(self, runtotal):
         trainconv = False
         print("Testing for convergence")
-        time_start_adf = timeit.default_timer()
+        adfstart = t.default_timer()
         unconverged = 0
         for bidder in self.bidders:
-            booQconv = bidder.Q_conv(self.convwin,
-                                     significance_level = self.convsigni,
-                                     step = self.convstep)
+            booQconv = bidder.Qconv(window = self.convwin,
+                                    sig = self.convsig,
+                                    step = self.convstep)
             if booQconv == False:
                 unconverged += 1
         if unconverged == 0:
             trainconv = True
-            print("Value of strategies have converged.")
+            print("Value of strategies have converged after ", runtotal + 1, " trials.")
         else:
             print(unconverged, " bidders still needs to converge.")
-        time_complete_adf = timeit.default_timer()
-        time_adf = time_complete_adf - time_start_adf
-        print("Time spent on ADF: ", time_adf, " seconds")
+        adfend = t.default_timer()
+        adftime = adfend - adfstart
+        print("Time spent on ADF: ", adftime, " seconds")
         return trainconv
 
 
@@ -133,14 +133,14 @@ class auctionsimulator:
             plt3 = av.vispropreward(self.log.logpath, self.bidders)
             plt4 = av.visrewards(self.log.logpath, self.bidders)
             plt5 = av.visuncertainrewards(self.log.logpath, self.bidders)
-            plt6 = av.visviolin(self.log.logpath, bidders)
+            plt6 = av.visviolin(self.log.logpath)
 
-            plt1.show()
-            plt2.show()
-            plt3.show()
-            plt4.show()
-            plt5.show()
-            plt6.show()
+            # plt1.show()
+            # plt2.show()
+            # plt3.show()
+            # plt4.show()
+            # plt5.show()
+            # plt6.show()
         return None
 
 
@@ -183,11 +183,11 @@ class auctionsimulator:
                 valgoods = self.findvalues()
                 rewards = self.findrewards(ngoods, prices, valgoods)
                 self.learn(states, bids, rewards)
-                self.writeroundlog(runtotal, phase, bids, ngoods, prices, rewards)
+                self.writeroundlog(runtotal, phase, bids, ngoods, prices, valgoods, rewards)
                 if phase == "training" \
                    and self.convtest == True \
                    and np.fmod(runphase + 1, self.convwin) == 0:
-                    trainconv = checkconv()
+                    trainconv = self.checkconv(runtotal)
                 runphase += 1
                 runtotal += 1
                 self.printinfo(runtotal, phase, bids, ngoods, prices, valgoods, rewards)

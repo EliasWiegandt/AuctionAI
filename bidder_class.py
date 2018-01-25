@@ -110,15 +110,16 @@ class Bidder:
         In: window (defines how far back the program should look)
         Out: boolean
         """
-        Q_log_data = pd.read_csv(self.Qlogname,
+        Qlogdata = pd.read_csv(self.Qlogname,
                                  skip_blank_lines = False,
                                  index_col = 0,
                                  header = 0,
                                  skiprows = lambda x: np.fmod(x, step) != 0)
-        Qdata = Q_log_data.tail(int( window / step ))
+        Qlogdata = Qlogdata.tail(int( window / step ))
+        Qlogdata.drop(["phase"], axis = 1, inplace = True)
         Qconvdict = {}
         Qconv = False
-        for name, series in Qdata.items():
+        for name, series in Qlogdata.items():
             adf = adfuller(x = series.values,
                            maxlag=None,
                            regression='c',
