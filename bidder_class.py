@@ -1,4 +1,3 @@
-# Create "Bidder" class
 import random
 import math
 import os
@@ -6,151 +5,85 @@ import csv
 import numpy as np
 import pandas as pd
 from statsmodels.tsa.stattools import adfuller
-# import statsmodels as sm
 import matplotlib.pyplot as plt
 
 class Bidder:
     def __init__(self,
                  name,
-                 learning=False,
-                 epsilon=1.0,
-                 alpha=0.5,
-                 fixed_bid=True,
-                 fixed_value = True,
-                 v_mid_ablock = 0.0,
-                 b_ablock = 0.0,
-                 actions_intervals = 50.0,
-                 n_actions = 4.0,
-                 n_values = 2.0,
-                 values_intervals = 2.0
+                 bidspace,
+                 valspace,
+                 learning = False,
+                 alpha = 0.5,
+                 logsuf = ""
                  ):
-        # Set parameters of the learning agent
-        self.learning = learning # Whether the agent is expected to learn
-        self.Q = dict()          # Create a Q-table which will be a dictionary of tuples
-        self.epsilon = epsilon   # Random exploration factor
-        self.alpha = alpha       # Learning factor
-        # self.t = 0               # Variable to keep track of iterations
-        self.v_ablock = v_mid_ablock
-        self.v_mid_ablock = v_mid_ablock
-        self.b_ablock = b_ablock
-        self.fixed_bid = fixed_bid
-        self.fixed_value = fixed_value
-        self.reward = 0.0
-        self.actions_intervals = actions_intervals
-        self.n_actions = n_actions
-        self.valid_actions = np.arange(self.v_mid_ablock - self.actions_intervals * self.n_actions,
-                                   self.v_mid_ablock + self.actions_intervals * (self.n_actions + 1),
-                                   self.actions_intervals)
 
-        self.values_intervals = values_intervals
-        self.n_values = n_values
-        self.valid_values = np.arange(self.v_mid_ablock - self.values_intervals * self.n_values,
-                                   self.v_mid_ablock + self.values_intervals * (self.n_values + 1),
-                                   self.values_intervals)
-        # self.valid_values = np.arange(9,12,2)
+        self.learning = learning
+        self.Q = dict()
+        self.alpha = alpha
+        self.bidspace = bidspace
+        self.valspace = valspace
         self.name = name
+        self.logsuf = logsuf
 
-        self.table_filename = os.path.join("logs",self.name + ".txt")
-        self.table_file = open(self.table_filename, 'w')
+        self.history = []
+        self.epsilon = 1.0
+        self.input = []
 
-        self.Q_log_filename = os.path.join("logs", self.name + "_Q_log" + ".csv")
-        # self.Q_log_fields = sorted(self.valid_actions)
-        self.Q_log_fields = ['{:.0f}'.format(x) for x in sorted(self.valid_actions)]
-        self.Q_log_fields.insert(0, "run_phase")
-        self.Q_log_file = open(self.Q_log_filename, 'w', newline='')
-        self.Q_log_writer = csv.DictWriter(self.Q_log_file,
-                                           fieldnames=self.Q_log_fields)
-        self.Q_log_writer.writeheader()
+        self.tblname = os.path.join("logs",self.name + self.logsuf + ".txt")
+        self.tblfile = open(self.tblname, 'w')
+        self.Qlogname = os.path.join("logs", self.name + "_Qlog" + self.logsuf + ".csv")
+        self.Qlogfields = [str(bid) for bid in sorted(self.bidspace)]
+        self.Qlogfields.insert(0, "runtotal")
+        self.Qlogfields.insert(1, "phase")
+        self.Qlogfile = open(self.Qlogname, 'w', newline='')
+        self.Qlogwriter = csv.DictWriter(self.Qlogfile, fieldnames=self.Qlogfields)
+        self.Qlogwriter.writeheader()
 
-    def reset(self, phase):
-        """ The reset function is called at the beginning of each trial.
-            'testing' is set to True if testing trials are being used
-            once training trials have completed. """
+
+    def reset(self, phase, runphase = 0):
         if phase == "testing":
             self.epsilon = 0
-            self.alpha = 0
         elif phase == "mixing":
             self.epsilon = 0.5
-        elif phase == "training":
-            # self.epsilon=self.epsilon - 0.05
             # self.epsilon=self.epsilon - 0.0015833333  # linear epsilon
-            # self.epsilon = np.exp(-1.0/00 * self.t)  # Exponential decaying epsilon
-            self.epsilon = 1.0  # Constant
-            # self.t += 1
-        else:
-            print("Issue detected, phase not recognized.")
-            print("Current phase set to: ", phase)
-
+        elif phase == "training":
+            self.epsilon = 1.0
         return None
 
 
-    def build_state(self):
-        """ The build_state function is called when the agent requests data from the
-            environment. The agents preferences and the result of the former
-            rounds are available features """
-        state = ("v_mid_ablock: " + str(self.v_mid_ablock))
-
+    def buildstate(self, inputs):
+        state = ("valspace: " + str(self.valspace),
+                 "history: " + str(self.history),
+                 "inputs: " + str(inputs))
         return state
 
 
     def learn(self, state, action, reward):
-        """ The learn function is called after the agent completes an action and
-            receives an award. This function does not consider future rewards
-            when conducting learning. """
         if self.learning == True:
             self.Q[state][str(action)] += self.alpha * (reward - self.Q[state][str(action)])
-
-        return
-
-
-    def get_maxQ(self, state):
-        """ The get_max_Q function is called when the agent is asked to find the
-            maximum Q-value of all actions based on the 'state' the smartcab is in. """
-        action_space=self.Q[state]
-        maxQ = max(self.Q[state].values())
-
-        return maxQ
-
-
-    def createQ(self, state):
-        """ The createQ function is called when a state is generated by the agent. """
-        # When learning, check if the 'state' is not in the Q-table
-        # If it is not, create a new dictionary for that state
-        # Then, for each action available, set the initial Q-value to 0.0
-        if not state in self.Q:
-            self.Q[state] = {}
-            for action in self.valid_actions:
-                self.Q[state][str(action)] = 0
-
-        return
-
-
-    def choose_action(self, state):
-        """ The choose_action function is called when the agent is asked to choose
-            which action to take, based on the 'state' the smartcab is in. """
-
-        self.state = state
-        action = None
-
-        if (self.learning == False or random.uniform(0, 1) < self.epsilon) and self.fixed_bid == False :
-            action = random.choice(self.valid_actions)
-        elif self.fixed_bid == True:
-            action = self.b_ablock
-        else:
-            max_value = max(self.Q[state].values())
-            action = random.choice([key for key, value in self.Q[state].items() if value == max_value])
-
-        return action
-
-
-    def draw_value(self):
-        self.v_ablock = random.choice(self.valid_values)
         return None
 
 
-    def write_Qtable(self):
-        # Write the Qdict to a Qtable
-        f = self.table_file
+    def createQ(self, state, validbids):
+        if not state in self.Q:
+            self.Q[state] = {}
+            for action in validbids:
+                self.Q[state][str(action)] = 0
+        return
+
+
+    def chooseaction(self, phase, state, filteredbidspace):
+        if phase == "training" or \
+        (phase == "mixing" and random.uniform(0, 1) < self.epsilon):
+            bid = random.choice(filteredbidspace)
+        else:
+            maxval = max(self.Q[state].values())
+            bid = float(random.choice([key for key, val in self.Q[state].items() if val == maxval]))
+        return bid
+
+
+    def writeQtable(self):
+        f = self.tblfile
         f.write("/-----------------------------------------\n")
         f.write("| State-action rewards from Q-Learning\n")
         f.write("\-----------------------------------------\n\n")
@@ -160,57 +93,59 @@ class Bidder:
             for action, reward in sorted(self.Q[state].items()):
                 f.write(" -- {} : {:.2f}\n".format(action, reward))
             f.write("\n")
-        self.table_file.close()
+        f.close()
 
 
-    def write_Q_log(self, run_phase):
+    def writeQlog(self, runtotal, phase):
         for state in self.Q:
-            # print(dict({"Run":run}, **self.Q[state]))
-            self.Q_log_writer.writerow(dict({"run_phase": run_phase}, **self.Q[state]))
+            self.Qlogwriter.writerow(dict({"runtotal": runtotal,
+                                           "phase": phase},
+                                           **self.Q[state]))
         return None
 
 
-    def Q_conv(self, window, significance_level = 0.05, step = 1000):
+    def Qconv(self, window, sig = 0.05, step = 1000):
         """
         This functions cheks if Q-database has converged.
-        In: window (defines how far back the program shoudl look)
+        In: window (defines how far back the program should look)
         Out: boolean
         """
-        Q_log_data = pd.read_csv(self.Q_log_filename,
-                                 skip_blank_lines=False,
-                                 index_col=0,
-                                 header=0,
-                                 # skiprows = lambda x: x not in range(0,window,step))
+        Q_log_data = pd.read_csv(self.Qlogname,
+                                 skip_blank_lines = False,
+                                 index_col = 0,
+                                 header = 0,
                                  skiprows = lambda x: np.fmod(x, step) != 0)
-        # print(Q_log_data.head)
-        # if self.name == "bidder1":
-        #     Q_log_data.plot()
-        #     plt.show()
-        # print(Q_log_data.shape)
-        Q_log_data = Q_log_data.tail(int(window/step))
-        Q_conv_dict = {}
-        Q_conv = False
-        # if self.name == "bidder1":
-        #     Q_log_data.plot()
-        #     plt.show()'
-        # df=pd.DataFrame({'a':np.random.rand(50), 'b':np.random.rand(50)})
-
-        for name, series in Q_log_data.items():
+        Qdata = Q_log_data.tail(int( window / step ))
+        Qconvdict = {}
+        Qconv = False
+        for name, series in Qdata.items():
             adf = adfuller(x = series.values,
                            maxlag=None,
                            regression='c',
                            autolag='BIC',
                            store=False,
                            regresults=False)
-            Q_conv_dict[name] = adf[1]
-            # if self.name == "bidder1":
-            #     print(adf)
-        unconverged = 0
-        for action, pvalue in Q_conv_dict.items():
-            if pvalue <= significance_level:
-                unconverged += 1
-        if unconverged == 0:
-            Q_conv = True
-        # else:
-        #     print(bidder.name, ", "unconverged, "series still hasn't converged")
-        return Q_conv, Q_conv_dict
+            Qconvdict[name] = adf[1]
+        nunconv = 0
+        for action, pvalue in Qconvdict.items():
+            if pvalue <= sig:
+                nunconv += 1
+        if nunconv == 0:
+            Qconv = True
+        return Qconv, Qconvdict
+
+
+    def valdraw(self):
+        valgood = random.choice(self.valspace)
+        return valgood
+
+
+    def rewardfunc(self, ngood, price, valgood):
+        reward = ngood * (valgood - price)
+        return reward
+
+
+    def updatehistory(self, state, bid):
+        entry = ("bid: ", bid)
+        self.history.append(entry)
+        return None

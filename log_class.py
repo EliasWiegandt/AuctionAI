@@ -1,34 +1,45 @@
 import os
 import csv
 
-class auction_log():
+class auctionlog():
     def __init__(self):
-        self.run_log_filename = os.path.join("logs", "auction_run_log" + ".csv")
-        self.run_log_fields = ['run_number',
-                           'name',
-                           'phase',
-                           'v_ablock',
-                           'b_ablock',
-                           'n_ablock',
-                           'p_ablock',
-                           'reward']
-        self.run_log_file = open(self.run_log_filename, 'w', newline='')
-        self.run_log_writer = csv.DictWriter(self.run_log_file, fieldnames=self.run_log_fields)
-        self.run_log_writer.writeheader()
+        self.logpath = os.path.join("logs", "auction_run_log" + ".csv")
+        self.logfields = ['runtotal',
+                          'name',
+                          'phase',
+                          'valspace',
+                          'bid',
+                          'ngood',
+                          'price',
+                          'valgood',
+                          'reward']
+        self.logfile = open(self.logpath, 'w', newline='')
+        self.logwriter = csv.DictWriter(self.logfile, fieldnames=self.logfields)
+        self.logwriter.writeheader()
 
         return None
 
 
-    def write_run_log(self, bidders, run, phase, n_ablocks, p_ablocks, p_ablock):
+    def writerunlog(self,
+                    bidders,
+                    runtotal,
+                    phase,
+                    bids,
+                    ngoods,
+                    prices,
+                    valgoods,
+                    rewards):
+
         for ix, bidder in enumerate(bidders):
-            self.run_log_writer.writerow({
-                'run_number': run,
+            self.logwriter.writerow({
+                'runtotal': runtotal,
                 'name': bidder.name,
                 'phase': phase,
-                'v_ablock': bidder.v_ablock,
-                'b_ablock': bidder.b_ablock,
-                'n_ablock': n_ablocks[ix],
-                'p_ablock': p_ablock,
-                'reward': bidder.reward})
+                'valspace': bidder.valspace,
+                'bid': bids[ix],
+                'ngood': ngoods[ix],
+                'price': prices[ix],
+                'valgood': valgoods[ix],
+                'reward': rewards[ix]})
 
         return None

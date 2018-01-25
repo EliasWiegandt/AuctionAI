@@ -6,88 +6,87 @@ import seaborn as sns
 import os
 # sns.set(style="whitegrid", palette="pastel", color_codes=True)
 
-def visualizeQ(bidders,
+def visQ(bidders,
                auction,
-               training_simulations,
-               test_simulations,
-               alpha
+               runtotal
                ):
-    n_bidders = len(bidders)
+    nbidders = len(bidders)
     fig, ax = plt.subplots()
-    specs_list = (str(n_bidders),
-                  str(auction.n_ablocks),
-                  str(training_simulations+ test_simulations),
-                  str(alpha))
-    title = "Bidders: %s, ablocks: %s, simulations: %s, alpha: %s"% specs_list
+    specs = (str(nbidders),
+                  str(auction.ngoods),
+                  str(runtotal))
+    title = "Bidders: %s, goods: %s, simulations: %s." % specs
     fig.suptitle(title, fontsize=12)
     ax1 = plt.subplot(111)
 
-    for index, bidder in enumerate(bidders):
+    for ix, bidder in enumerate(bidders):
         x = []
         y = []
         for state in bidder.Q:
             for action, reward in sorted(bidder.Q[state].items()):
-                action = int(action)
+                action = float(action)
                 x.append(action)
                 y.append(reward)
-        plt.subplot(1, n_bidders, index+1, sharex=ax1, sharey=ax1)
-        bars = plt.bar(x, y, width=bidder.actions_intervals, edgecolor='black')
-        mid_bar = math.floor(len(bars)/2)
-        # mid_bar = 1
-        bars[mid_bar].set_color('black')
+        plt.subplot(1, nbidders, ix+1, sharex=ax1, sharey=ax1)
+        width = (max(bidder.bidspace)-min(bidder.bidspace))/(len(bidder.bidspace))
+        bars = plt.bar(x, y, width = width, edgecolor='black')
+        midbar = math.floor(len(bars)/2)
+        bars[midbar].set_color('black')
         plt.title(bidder.name)
 
-    plt.savefig(os.path.join("charts", 'Q_final.png'))
+    plt.savefig(os.path.join("charts", 'Qfinal.png'))
     plt.draw()
-
     return plt
 
-def visualize_Convergence(bidders):
-    n_bidders = len(bidders)
+
+def visconv(bidders):
+    nbidders = len(bidders)
     fig, ax = plt.subplots()
     title = "Q developments"
     fig.suptitle(title, fontsize=12)
     ax1 = plt.subplot(111)
-    for index, bidder in enumerate(bidders):
-        # Q_log_data = pd.read_csv(bidder.Q_log_filename, skip_blank_lines=False)
-        Q_log_data = pd.read_csv(bidder.Q_log_filename,
-                                 index_col=0,
-                                 skip_blank_lines=False)
-        plt.subplot(1, n_bidders, index+1, sharex=ax1, sharey=ax1)
-        plot = plt.plot(Q_log_data)
+    for ix, bidder in enumerate(bidders):
+        Qlogdata = pd.read_csv(bidder.Qlogname,
+                                 index_col = 0,
+                                 header = 0,
+                                 skip_blank_lines = False)
+        Qlogdata.drop(["phase"], axis = 1, inplace = True)
+        plt.subplot(1, nbidders, ix+1, sharex = ax1, sharey = ax1)
+        plot = plt.plot(Qlogdata)
         plt.title(bidder.name)
-    plt.savefig(os.path.join("charts", 'Q_convergence.png'))
+    plt.savefig(os.path.join("charts", 'Qconv.png'))
     plt.draw()
     return plt
 
-def visualize_prop_reward(run_log_filename, bidders):
-    print("In prop")
-    n_bidders = len(bidders)
+def vispropreward(runlogname, bidders):
+    nbidders = len(bidders)
     fig, ax = plt.subplots()
     title = "Q breakdown"
     fig.suptitle(title, fontsize=12)
     ax1 = plt.subplot(111)
-    chart_row_2 = str(n_bidders) + '11'
-    ax2 = plt.subplot(int(chart_row_2))
-    log_data = pd.read_csv(run_log_filename, skip_blank_lines=False)
-    for index, bidder in enumerate(bidders):
-        bidder_data = log_data.where(log_data.name == bidder.name).dropna(axis=0, how='any')
-        bidder_grouped = bidder_data[['b_ablock', 'n_ablock', 'reward']].groupby(by = "b_ablock", as_index=False).mean().rename(index=str, columns={"n_ablock": "prop_ablock"})
-        reward_grouped = bidder_data[['b_ablock', 'p_ablock', 'reward']].where(bidder_data.n_ablock == True).groupby(by = "b_ablock", as_index=False).mean().rename(index=str, columns={"reward": "reward_given_win"})
-        bidder_grouped = pd.merge(bidder_grouped, reward_grouped, on=['b_ablock'], how='outer')
+    chartrow2 = str(nbidders) + '11'
+    ax2 = plt.subplot(int(chartrow2))
+    logdata = pd.read_csv(runlogname, skip_blank_lines=False)
+    for ix, bidder in enumerate(bidders):
+        bidderdata = logdata.where(logdata.name == bidder.name).dropna(axis=0, how='any')
+        biddergrouped = bidderdata[['bid', 'ngood', 'reward']].groupby(by = "bid", as_index=False).mean().rename(index=str, columns={"ngood": "proprice"})
+        rewardgrouped = bidderdata[['bid', 'price', 'reward']].where(bidderdata.ngood == True).groupby(by = "bid", as_index=False).mean().rename(index=str, columns={"reward": "reward_given_win"})
+        biddergrouped = pd.merge(biddergrouped, rewardgrouped, on=['bid'], how='outer')
 
-        x = bidder_grouped['b_ablock']
-        y = bidder_grouped['prop_ablock']
-        plt.subplot(2, n_bidders, index+1, sharex=ax1, sharey=ax1)
-        bars = plt.bar(x, y, width=bidder.actions_intervals, edgecolor='black')
+        x = biddergrouped['bid']
+        y = biddergrouped['proprice']
+        plt.subplot(2, nbidders, ix+1, sharex=ax1, sharey=ax1)
+        width = (max(bidder.bidspace)-min(bidder.bidspace))/(len(bidder.bidspace))
+        bars = plt.bar(x, y, width=width, edgecolor='black')
         mid_bar = math.floor(len(bars)/2)
         bars[mid_bar].set_color('black')
         plt.title(bidder.name)
 
-        x = bidder_grouped['b_ablock']
-        y = bidder_grouped['reward_given_win']
-        plt.subplot(2, n_bidders, index+1+n_bidders, sharex=ax2, sharey=ax2)
-        bars = plt.bar(x, y, width=bidder.actions_intervals, edgecolor='black')
+        x = biddergrouped['bid']
+        y = biddergrouped['reward_given_win']
+        plt.subplot(2, nbidders, ix+1+nbidders, sharex=ax2, sharey=ax2)
+        width = (max(bidder.bidspace)-min(bidder.bidspace))/(len(bidder.bidspace))
+        bars = plt.bar(x, y, width = width, edgecolor='black')
         mid_bar = math.floor(len(bars)/2)
         bars[mid_bar].set_color('black')
         plt.title(bidder.name)
@@ -95,91 +94,89 @@ def visualize_prop_reward(run_log_filename, bidders):
     plt.draw()
     return plt
 
-def visualize_rewards(run_log_filename, bidders):
-    n_bidders = len(bidders)
+def visrewards(run_log_filename, bidders):
+    nbidders = len(bidders)
     fig, ax = plt.subplots()
     title = "Reward breakdown by mean and sem"
     fig.suptitle(title, fontsize=12)
     ax1 = plt.subplot(111)
-    chart_row_2 = str(n_bidders) + '11'
-    ax2 = plt.subplot(int(chart_row_2))
-    log_data = pd.read_csv(run_log_filename, skip_blank_lines=False)
-    for index, bidder in enumerate(bidders):
-        bidder_data = log_data.where(log_data.name == bidder.name).dropna(axis=0, how='any')
-        bidder_data['reward_std']=bidder_data['reward']
-        bidder_data['reward_n']=bidder_data['reward']
-        bidder_grouped = bidder_data[['b_ablock', 'reward', 'reward_std', 'reward_n']].groupby(by = "b_ablock", as_index=False).agg({'reward': np.mean, 'reward_std': np.std, 'reward_n': 'count'})
-        bidder_grouped['reward_sem'] =  bidder_grouped['reward_std'] / np.sqrt(bidder_grouped['reward_n'])
-        x = bidder_grouped['b_ablock']
-        y = bidder_grouped['reward']
-        ste_y = bidder_grouped['reward_sem']*1.96
-        plt.subplot(1, n_bidders, index+1, sharex=ax1, sharey=ax1)
-        bars = plt.bar(x, y, yerr=ste_y, width=bidder.actions_intervals, edgecolor='black', ecolor='red',)
+    logdata = pd.read_csv(run_log_filename, skip_blank_lines=False)
+    for ix, bidder in enumerate(bidders):
+        bidderdata = logdata.where(logdata.name == bidder.name).dropna(axis=0, how='any')
+        bidderdata['reward_std']=bidderdata['reward']
+        bidderdata['reward_n']=bidderdata['reward']
+        biddergrouped = bidderdata[['bid', 'reward', 'reward_std', 'reward_n']].groupby(by = "bid", as_index=False).agg({'reward': np.mean, 'reward_std': np.std, 'reward_n': 'count'})
+        biddergrouped['reward_sem'] =  biddergrouped['reward_std'] / np.sqrt(biddergrouped['reward_n'])
+        x = biddergrouped['bid']
+        y = biddergrouped['reward']
+        sey = biddergrouped['reward_sem']*1.96
+        plt.subplot(1, nbidders, ix+1, sharex=ax1, sharey=ax1)
+        width = (max(bidder.bidspace) - min(bidder.bidspace)) / (len(bidder.bidspace))
+        bars = plt.bar(x, y, yerr=sey, width = width, edgecolor='black', ecolor='red',)
         mid_bar = math.floor(len(bars)/2)
         bars[mid_bar].set_color('black')
         plt.title(bidder.name)
-        quantiles=bidder_data['reward'].quantile([0.025, 0.975])
+        quantiles=bidderdata['reward'].quantile([0.025, 0.975])
     plt.savefig(os.path.join("charts", 'rew_est.png'))
     plt.draw()
     return plt
 
-def visualize_uncertain_rewards(run_log_filename, bidders):
-    log_data = pd.read_csv(run_log_filename, skip_blank_lines=False)
+def visuncertainrewards(run_log_filename, bidders):
+    logdata = pd.read_csv(run_log_filename, skip_blank_lines=False)
     bidder = bidders[0]
 
-    bidder_data = log_data.where(log_data.name == bidder.name).dropna(axis=0, how='any')
-    bidder_data['reward_std']=bidder_data['reward']
-    bidder_data['reward_n']=bidder_data['reward']
-    unique_v_ablocks = sorted(bidder_data["v_ablock"].unique())
+    bidderdata = logdata.where(logdata.name == bidder.name).dropna(axis=0, how='any')
+    bidderdata['reward_std']=bidderdata['reward']
+    bidderdata['reward_n']=bidderdata['reward']
+    univals = sorted(bidderdata["valspace"].unique())
     columns = 5.0
-    rows = math.ceil(len(unique_v_ablocks)/columns)
+    rows = math.ceil(len(univals)/columns)
     fig, ax = plt.subplots()
     ax1 = plt.subplot(111)
     title = bidder.name + ": reward given v_ablock"
     fig.suptitle(title, fontsize=12)
 
-    for index, v_ablock in enumerate(unique_v_ablocks):
-        # row = math.ceil((index+1)/columns)
-        # column = math.fmod(index, columns)+1
-        plt.subplot(rows, columns, index+1, sharex=ax1, sharey=ax1)
-        bidder_v_ablock = bidder_data[['v_ablock', 'b_ablock', 'reward', 'reward_std', 'reward_n']].where(bidder_data['v_ablock'] == v_ablock).dropna(axis=0, how='any')
-        bidder_grouped = bidder_v_ablock[['v_ablock', 'b_ablock', 'reward', 'reward_std', 'reward_n']].groupby(by = ["b_ablock"], as_index=False).agg({'v_ablock': np.mean, 'reward': np.mean, 'reward_std': np.std, 'reward_n': 'count'})
-        bidder_grouped['reward_sem'] =  bidder_grouped['reward_std'] / np.sqrt(bidder_grouped['reward_n'])
-        x = bidder_grouped['b_ablock']
-        y = bidder_grouped['reward']
-        ste_y = bidder_grouped['reward_sem']*1.96
-        bars = plt.bar(x, y, yerr=ste_y, width=bidder.actions_intervals, edgecolor='black', ecolor='red',)
-        plt.title("v_ablock: " + str(v_ablock))
+    for ix, value in enumerate(univals):
+        plt.subplot(rows, columns, ix+1, sharex=ax1, sharey=ax1)
+        bidder_value = bidderdata[['valgood', 'bid', 'reward', 'reward_std', 'reward_n']].where(bidderdata['valgood'] == value).dropna(axis=0, how='any')
+        biddergrouped = bidder_value[['valgood', 'bid', 'reward', 'reward_std', 'reward_n']].groupby(by = ["bid"], as_index=False).agg({'valgood': np.mean, 'reward': np.mean, 'reward_std': np.std, 'reward_n': 'count'})
+        biddergrouped['reward_sem'] =  biddergrouped['reward_std'] / np.sqrt(biddergrouped['reward_n'])
+        x = biddergrouped['bid']
+        y = biddergrouped['reward']
+        sey = biddergrouped['reward_sem']*1.96
+        width = (max(bidder.bidspace) - min(bidder.bidspace)) / (len(bidder.bidspace))
+        bars = plt.bar(x, y, yerr=sey, width = width, edgecolor='black', ecolor='red',)
+        plt.title("value of good: " + str(value))
     plt.savefig(os.path.join("charts", 'state_rew_est.png'))
     plt.show()
     return plt
 
 def visualize_rewards_violin_by_bidder(run_log_filename, bidders):
     print("In violin")
-    n_bidders = len(bidders)
-    fig, axes = plt.subplots(1, n_bidders)
+    nbidders = len(bidders)
+    fig, axes = plt.subplots(1, nbidders)
     title = "Reward distribution"
     fig.suptitle(title, fontsize=12)
-    log_data = pd.read_csv(run_log_filename, skip_blank_lines=False)
+    logdata = pd.read_csv(run_log_filename, skip_blank_lines=False)
     for ix, bidder in enumerate(bidders):
-        bidder_data = log_data.where(log_data.name == bidder.name).dropna(axis=0, how='any')
-        ax = sns.violinplot(x="b_ablock",
+        bidderdata = logdata.where(logdata.name == bidder.name).dropna(axis=0, how='any')
+        ax = sns.violinplot(x="bid",
                        y="reward",
-                       data=bidder_data,
+                       data=bidderdata,
                        ax = axes[ix])
     plt.savefig(os.path.join("charts", 'rew_bybidder_violin.png'))
     plt.draw()
     return plt
 
-def visualize_rewards_violin(run_log_filename, bidders):
-    n_bidders = len(bidders)
+def visviolin(run_log_filename, bidders):
+    nbidders = len(bidders)
     fig, axes = plt.subplots(1, 1)
     title = "Reward distribution"
     fig.suptitle(title, fontsize=12)
-    log_data = pd.read_csv(run_log_filename, skip_blank_lines=False)
-    ax = sns.violinplot(x="b_ablock",
+    logdata = pd.read_csv(run_log_filename, skip_blank_lines=False)
+    ax = sns.violinplot(x="bid",
                    y="reward",
-                   data=log_data,
+                   data=logdata,
                    inner="box",
                    )
     plt.savefig(os.path.join("charts", 'rew_violin.png'))

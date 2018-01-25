@@ -2,92 +2,92 @@
 import numpy as np
 from scipy.stats import rankdata
 
-class Auction:
-    def __init__(self):
-        self.a_min_price = 50
-        self.n_ablocks = 1
+class secondpriceauction:
+    def __init__(self, ngoods = 1, minprice = 0):
+        self.minprice = minprice
+        self.ngoods = ngoods
 
 
-    def r1(self, bool_abids, b_ablocks):
+    def bidfilter(self, bidder):
         """
-        Runs the first round of the auction, the allotment of A-blocks
-        Input: list of boolean indicator of bid, list of A-block bids
-        Output: list of awarded blocks, list of prices
+        Filters valid actions of bidders by the auction-specific criterias
+        In:  bidder (class)
+        Out: validbids (list of valid actions of bidder filtered by auction criteria)
         """
-        n_ablocks = [None] * len(bool_abids)
-        p_ablocks = []
-        p_ablock = None
+        validbids = bidder.bidspace
+        return validbids
 
-        if sum(bool_abids) > self.n_ablocks: # More bidders than blocks
-            # Find price of auction
-            ordered_indices = list(range(len(b_ablocks)))
-            ordered_bids = sorted(ordered_indices, key=lambda k: b_ablocks[k], reverse=True)
-            p_ablock = b_ablocks[ordered_bids[self.n_ablocks]]
 
-            ranks = rankdata(b_ablocks, method='max') - 1
-            ranks = np.ones_like(ranks)*(len(ranks)-1) - ranks
+    def evaluate(self, bids):
+        """
+        Runs second-price auction where max one good can be awarded to each bidder
+        In: list of boolean indicator of bid, list of A-block bids
+        Out: list of awarded blocks, list of prices
+        """
+        boolbids = []
+        for bid in bids:
+
+            boolbids.append(bid >= self.minprice)
+        ngoods = [None] * len(bids)
+        prices = []
+        price = None
+        auctionclose = False
+
+        if sum(boolbids) > self.ngoods: # More bidders than blocks
+            ordixs = list(range(len(bids)))
+            ordbids = sorted(ordixs, key=lambda k: bids[k], reverse=True)
+            price = bids[ordbids[self.ngoods]]
+            ranks = rankdata(bids, method='max') - 1
+            ranks = np.ones_like(ranks)*(len(ranks)-1) - ranks # Reverse ranks
 
             # Check if a random choice is needed between bidders
-            in_auction = sum(ranks < self.n_ablocks)
-            random_choice_needed = False
-            if in_auction > self.n_ablocks:
-                random_choice_needed = True
-                rank_at_risk = max(ranks[ranks < self.n_ablocks])
-                bidders_to_kick = in_auction - self.n_ablocks
-                rank_at_risk_number = sum(ranks == rank_at_risk)
-                kick_space = np.arange(start = 1,
-                                       stop = rank_at_risk_number + 1,
-                                       step = 1)
-                kick_numbers = np.random.choice(kick_space,
-                                                size=bidders_to_kick,
-                                                replace=False,
-                                                p=None)
+            ranchoice = False
+            inauc = sum(ranks < self.ngoods)
+            if inauc > self.ngoods:
+                ranchoice = True
+                kickrank = max(ranks[ranks < self.ngoods])
+                nkick = inauc - self.ngoods
+                nkickrank = sum(ranks == kickrank)
+                kickspace = np.arange(start = 1,
+                                      stop = nkickrank + 1,
+                                      step = 1)
+                kickchoice = np.random.choice(kickspace,
+                                              size=nkick,
+                                              replace=False,
+                                              p=None)
 
             # Determine who gets blocks
-            kick_counter = 1
+            nkicked = 1
             for index, rank in enumerate(ranks):
-                if random_choice_needed:
-                    if rank < rank_at_risk:
-                        n_ablocks[index] = True
-                    elif rank == rank_at_risk:
-                        if not(kick_counter in kick_numbers):
-                            n_ablocks[index] = True
-                            kick_counter += 1
+                if ranchoice:
+                    if rank < kickrank:
+                        ngoods[index] = True
+                    elif rank == kickrank:
+                        if not(nkicked in kickchoice):
+                            ngoods[index] = True
+                            nkicked += 1
                         else:
-                            n_ablocks[index] = False
-                            kick_counter += 1
+                            ngoods[index] = False
+                            nkicked += 1
                     else:
-                        n_ablocks[index] = False
+                        ngoods[index] = False
                 else:
-                    n_ablocks[index] = rank < self.n_ablocks
+                    ngoods[index] = rank < self.ngoods
 
             # Write array with prices
-            for n in n_ablocks:
+            for n in ngoods:
                 if n:
-                    p_ablocks.append(p_ablock)
+                    prices.append(price)
                 else:
-                    p_ablocks.append(n)
+                    prices.append(n)
 
         else: # This is activated when there are more or equal blocks than bidders
-            n_ablocks = bool_abids
-            for n in n_ablocks:
+            ngoods = boolbids
+            for n in ngoods:
                 if n:
-                    p_ablocks.append(self.a_min_price)
-                    p_ablock=self.a_min_price
+                    prices.append(self.minprice)
+                    price=self.minprice
                 else:
-                    p_ablocks.append(n)
-
-        return n_ablocks, p_ablocks, p_ablock
-
-
-    def round_two(self):
-        str_desc = "Allotment of cover duty."
-        return str_desc
-
-    def round_three(self):
-        str_desc = "Allotment of B-blocks."
-        return str_desc
-
-    def auction_result(self):
-        str_desc = "Allotment of A-blocks."
-        return str_desc
+                    prices.append(n)
+        auctionclose = True
+        return ngoods, prices, auctionclose
