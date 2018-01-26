@@ -94,6 +94,7 @@ class auctionsimulator:
             booQconv = bidder.Qconv(window = self.convwin,
                                     sig = self.convsig,
                                     step = self.convstep)
+            # print(booQconv)
             if booQconv == False:
                 unconverged += 1
         if unconverged == 0:
@@ -103,13 +104,13 @@ class auctionsimulator:
             print(unconverged, " bidders still needs to converge.")
         adfend = t.default_timer()
         adftime = adfend - adfstart
-        print("Time spent on ADF: ", adftime, " seconds")
+        print("Time spent on ADF: ", '{0:.{1}f}'.format(adftime,1), " seconds")
         return trainconv
 
 
-    def bidderreset(self, phase, runphase):
+    def bidderreset(self, phase, runphase, maxrun):
         for bidder in self.bidders:
-            bidder.reset(phase, runphase)
+            bidder.reset(phase, runphase, maxrun)
         return None
 
 
@@ -128,15 +129,15 @@ class auctionsimulator:
 
     def visualizeauctions(self, runtotal):
         if self.visualize:
-            plt1 = av.visQ(self.bidders, self.auction, runtotal)
+            # plt1 = av.visQ(self.bidders, self.auction, runtotal)
             plt2 = av.visconv(self.bidders)
-            plt3 = av.vispropreward(self.log.logpath, self.bidders)
-            plt4 = av.visrewards(self.log.logpath, self.bidders)
-            plt5 = av.visuncertainrewards(self.log.logpath, self.bidders)
-            plt6 = av.visviolin(self.log.logpath)
+            # plt3 = av.vispropreward(self.log.logpath, self.bidders)
+            # plt4 = av.visrewards(self.log.logpath, self.bidders)
+            # plt5 = av.visuncertainrewards(self.log.logpath, self.bidders)
+            # plt6 = av.visviolin(self.log.logpath)
 
             # plt1.show()
-            # plt2.show()
+            plt2.show()
             # plt3.show()
             # plt4.show()
             # plt5.show()
@@ -166,15 +167,16 @@ class auctionsimulator:
     def simulateauction(self):
         maxruns = [self.ntrain, self.nmix, self.ntest]
         phases = ["training", "mixing", "testing"]
+        runtotal = 0
         for phase, maxrun in zip(phases, maxruns):
+            phasestart = t.default_timer()
             runphase = 0
-            runtotal = 0
             trainconv = False
             while runphase < maxrun \
                   and (trainconv == False or phase != "training"):
                 auctionclose = False
                 self.resethistories()
-                self.bidderreset(phase, runphase)
+                self.bidderreset(phase, runphase, maxrun)
                 while auctionclose == False:
                     states = self.findstates()
                     bids = self.findbids(phase, states)
@@ -191,5 +193,8 @@ class auctionsimulator:
                 runphase += 1
                 runtotal += 1
                 self.printinfo(runtotal, phase, bids, ngoods, prices, valgoods, rewards)
+            phaseend = t.default_timer()
+            phasetime = '{0:.{1}f}'.format(phaseend - phasestart, 1)
+            print("Time used on ", phase,": ", phasetime, " seconds")
         self.visualizeauctions(runtotal)
         return None

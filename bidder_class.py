@@ -40,12 +40,12 @@ class Bidder:
         self.Qlogwriter.writeheader()
 
 
-    def reset(self, phase, runphase = 0):
+    def reset(self, phase, runphase = 0, maxrun = 1):
         if phase == "testing":
             self.epsilon = 0
         elif phase == "mixing":
-            self.epsilon = 0.5
-            # self.epsilon=self.epsilon - 0.0015833333  # linear epsilon
+            # self.epsilon = 0.5
+            self.epsilon=self.epsilon - 1 / maxrun  # linear epsilon
         elif phase == "training":
             self.epsilon = 1.0
         return None
@@ -119,21 +119,30 @@ class Bidder:
         Qlogdata.drop(["phase"], axis = 1, inplace = True)
         Qconvdict = {}
         Qconv = False
+        if self.name == "bidder1":
+            plot = Qlogdata.plot(kind = 'line')
+            plt.show()
         for name, series in Qlogdata.items():
             adf = adfuller(x = series.values,
-                           maxlag=None,
-                           regression='c',
-                           autolag='BIC',
+                           maxlag=0,
+                           regression='nc',
+                           autolag=None,
                            store=False,
                            regresults=False)
+            print("p-value: ", adf[1])
+            # print("sig level: ", sig)
             Qconvdict[name] = adf[1]
         nunconv = 0
         for action, pvalue in Qconvdict.items():
-            if pvalue <= sig:
+            # print("looping through")
+            # print(pvalue >= sig)
+            if pvalue >= sig:
                 nunconv += 1
         if nunconv == 0:
             Qconv = True
-        return Qconv, Qconvdict
+        # print(nunconv)
+        # print(Qconv)
+        return Qconv
 
 
     def valdraw(self):

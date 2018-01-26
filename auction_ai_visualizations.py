@@ -47,10 +47,20 @@ def visconv(bidders):
                                  index_col = 0,
                                  header = 0,
                                  skip_blank_lines = False)
+
+        # Find first instance of new phase
+        phases = Qlogdata["phase"].unique()
+        ixfirsts = []
+        for phase in phases:
+            ixfirst = Qlogdata["phase"].eq(phase).idxmax()
+            ixfirsts.append(ixfirst)
         Qlogdata.drop(["phase"], axis = 1, inplace = True)
         plt.subplot(1, nbidders, ix+1, sharex = ax1, sharey = ax1)
-        plot = plt.plot(Qlogdata)
+        plt.plot(Qlogdata)
+        plt.legend(list(Qlogdata),loc='upper left')
         plt.title(bidder.name)
+        for ixfirstphase in ixfirsts:
+            plt.axvline(x=ixfirstphase)
     plt.savefig(os.path.join("charts", 'Qconv.png'), bbox_inches='tight')
     plt.draw()
     return plt

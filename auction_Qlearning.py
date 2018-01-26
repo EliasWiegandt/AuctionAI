@@ -21,23 +21,26 @@ os.chdir(dname) # Set path to working directory
 np.random.seed(10)
 random.seed(a=10)
 printruns = False
-visualize = False
+visualize = True
 convtest = False
 
 ngoods = 2
 minprice = 0
 
-alpha = 0.0001
-ntrain = 1000000
-nmix = 0
-ntest = 0
+alpha  = 0.0001
+ntrain = 100000
+nmix   = 100000
+ntest  = 100000
 logsuf = ""
 bidspace = [80.0, 90.0, 100.0]
-valspace = [94.0]
-convtest = True
+valspace = [90.0]
+convtest = False
 convwin = 50000
-convstep = int(convwin / 50)
+convstep = int(convwin / 25)
 convsig = 0.01
+
+# Convert bids to floats, to be certain
+bidspace = [float(i) for i in bidspace]
 
 bidder1 = bc.Bidder(name = "bidder1",
                      bidspace = bidspace,
@@ -84,6 +87,8 @@ setupend = t.default_timer()
 simulator.simulateauction()
 
 progend = t.default_timer()
+setuptime = '{0:.{1}f}'.format(setupend - progstart, 1)
+progtime = '{0:.{1}f}'.format(progend - setupend, 1)
 
-print("Time spent on setup: ", setupend - progstart, " seconds")
-print("Time spent on program: ", progend - setupend, " seconds")
+print("Time spent on setup: ", setuptime, " seconds")
+print("Time spent on program: ", progtime, " seconds")
