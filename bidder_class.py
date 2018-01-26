@@ -117,6 +117,7 @@ class Bidder:
                                  skiprows = lambda x: np.fmod(x, step) != 0)
         Qlogdata = Qlogdata.tail(int( window / step ))
         Qlogdata.drop(["phase"], axis = 1, inplace = True)
+        Qlogdata = Qlogdata.diff(periods=1, axis=0)
         Qconvdict = {}
         Qconv = False
         if self.name == "bidder1":
@@ -124,9 +125,9 @@ class Bidder:
             plt.show()
         for name, series in Qlogdata.items():
             adf = adfuller(x = series.values,
-                           maxlag=0,
+                           maxlag=None,
                            regression='nc',
-                           autolag=None,
+                           autolag='BIC',
                            store=False,
                            regresults=False)
             print("p-value: ", adf[1])

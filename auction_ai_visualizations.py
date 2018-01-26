@@ -57,7 +57,7 @@ def visconv(bidders):
         Qlogdata.drop(["phase"], axis = 1, inplace = True)
         plt.subplot(1, nbidders, ix+1, sharex = ax1, sharey = ax1)
         plt.plot(Qlogdata)
-        plt.legend(list(Qlogdata),loc='upper left')
+        plt.legend(list(Qlogdata), loc='best')
         plt.title(bidder.name)
         for ixfirstphase in ixfirsts:
             plt.axvline(x=ixfirstphase)

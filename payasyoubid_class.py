@@ -1,8 +1,7 @@
-# Create auction class
 import numpy as np
 from scipy.stats import rankdata
 
-class secondpriceauction:
+class payasyoubid:
     def __init__(self, ngoods = 1, minprice = 0):
         self.minprice = minprice
         self.ngoods = ngoods
@@ -20,13 +19,12 @@ class secondpriceauction:
 
     def evaluate(self, bids):
         """
-        Runs second-price auction where max one good can be awarded to each bidder
+        Runs pay as you bid auction where max one good can be awarded to each bidder
         In: List of bids
         Out: list of awarded blocks, list of prices
         """
         boolbids = []
         for bid in bids:
-
             boolbids.append(bid >= self.minprice)
         ngoods = [None] * len(bids)
         prices = []
@@ -36,7 +34,6 @@ class secondpriceauction:
         if sum(boolbids) > self.ngoods: # More bidders than blocks
             ordixs = list(range(len(bids)))
             ordbids = sorted(ordixs, key=lambda k: bids[k], reverse=True)
-            price = bids[ordbids[self.ngoods]]
             ranks = rankdata(bids, method='max') - 1
             ranks = np.ones_like(ranks)*(len(ranks)-1) - ranks # Reverse ranks
 
@@ -75,19 +72,19 @@ class secondpriceauction:
                     ngoods[index] = rank < self.ngoods
 
             # Write array with prices
-            for n in ngoods:
-                if n:
-                    prices.append(price)
+            for ngood, bid in zip(ngoods, bids):
+                if ngood:
+                    prices.append(bid)
                 else:
-                    prices.append(n)
+                    prices.append(ngood)
 
         else: # This is activated when there are more or equal blocks than bidders
             ngoods = boolbids
-            for n in ngoods:
+            for ngood, bid in zip(ngoods, bids):
                 if n:
-                    prices.append(self.minprice)
+                    prices.append(bid)
                     price=self.minprice
                 else:
-                    prices.append(n)
+                    prices.append(ngood)
         auctionclose = True
         return ngoods, prices, auctionclose

@@ -1,4 +1,5 @@
 import auction_class as ac
+import payasyoubid_class as pc
 import bidder_class as bc
 import log_class as lc
 import simulation_env_class as se
@@ -28,15 +29,15 @@ ngoods = 2
 minprice = 0
 
 alpha  = 0.0001
-ntrain = 100000
-nmix   = 100000
-ntest  = 100000
+ntrain = 1000
+nmix   = 1000
+ntest  = 1000
 logsuf = ""
-bidspace = [80.0, 90.0, 100.0]
-valspace = [90.0]
+bidspace = [90.0, 95.0, 100.0, 110.0]
+valspace = [100.0]
 convtest = False
-convwin = 50000
-convstep = int(convwin / 25)
+convwin = 10000
+convstep = int(convwin / 100)
 convsig = 0.01
 
 # Convert bids to floats, to be certain
@@ -65,8 +66,8 @@ bidder3 = bc.Bidder(name = "bidder3",
 
 bidders = [bidder1, bidder2, bidder3]
 
-auction = ac.secondpriceauction(ngoods = ngoods, minprice = minprice)
-
+auction = pc.payasyoubid(ngoods = ngoods, minprice = minprice)
+# auction = ac.secondpriceauction(ngoods = ngoods, minprice = minprice)
 log = lc.auctionlog()
 
 simulator = se.auctionsimulator(auction = auction,
