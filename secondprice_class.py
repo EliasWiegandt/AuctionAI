@@ -26,7 +26,6 @@ class secondpriceauction:
         """
         boolbids = []
         for bid in bids:
-
             boolbids.append(bid >= self.minprice)
         ngoods = [None] * len(bids)
         prices = []

@@ -1,5 +1,6 @@
-import auction_class as ac
+import secondprice_class as sc
 import payasyoubid_class as pc
+import combinatorial_class as cc
 import bidder_class as bc
 import log_class as lc
 import simulation_env_class as se
@@ -14,27 +15,25 @@ progstart = t.default_timer()
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 os.chdir(dname) # Set path to working directory
-# manager = plt.get_current_fig_manager()
-# manager.window.showMaximized()
-
-
 
 np.random.seed(10)
 random.seed(a=10)
 printruns = False
-visualize = True
+visualize = False
 convtest = False
 
-ngoods = 2
-minprice = 0
+ngoods = 4
+minprice = 25
+resprice = 20
+pricestep = 5
 
-alpha  = 0.0001
+alpha  = 0.001
 ntrain = 1000
-nmix   = 1000
-ntest  = 1000
+nmix   = 0
+ntest  = 0
 logsuf = ""
-bidspace = [90.0, 95.0, 100.0, 110.0]
-valspace = [100.0]
+bidspace = [0.0, 1.0, 2.0]
+valspace = [50]
 convtest = False
 convwin = 10000
 convstep = int(convwin / 100)
@@ -66,8 +65,14 @@ bidder3 = bc.Bidder(name = "bidder3",
 
 bidders = [bidder1, bidder2, bidder3]
 
-auction = pc.payasyoubid(ngoods = ngoods, minprice = minprice)
-# auction = ac.secondpriceauction(ngoods = ngoods, minprice = minprice)
+# auction = pc.payasyoubidauction(ngoods = ngoods, minprice = minprice)
+# auction = sc.secondpriceauction(ngoods = ngoods, minprice = minprice)
+auction = cc.combiclock(ngoods = ngoods,
+                        minprice = minprice,
+                        pricestep = pricestep,
+                        resprice = resprice,
+                        bidders = bidders)
+
 log = lc.auctionlog()
 
 simulator = se.auctionsimulator(auction = auction,

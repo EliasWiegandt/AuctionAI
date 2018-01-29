@@ -18,7 +18,9 @@ class auctionsimulator:
                  convstep,
                  convsig,
                  printruns = False,
-                 visualize = False
+                 visualize = False,
+                 globalvalgood = False,
+                 globalbidspace = []
                  ):
         self.auction = auction
         self.bidders = bidders
@@ -32,6 +34,8 @@ class auctionsimulator:
         self.convsig = convsig
         self.printruns = printruns
         self.visualize = visualize
+        self.globalvalgood = globalvalgood
+        self.globalbidspace = globalbidspace
 
 
     def findstates(self, input = []):
@@ -159,9 +163,19 @@ class auctionsimulator:
 
     def findvalues(self):
         valgoods = []
-        for bidder in self.bidders:
-            valgoods.append(bidder.valdraw())
+        if self.globalvalgood:
+            valgood = random.choice(globalbidspace)
+            valgoods = len(self.bidders) * valgood
+        else:
+            for bidder in self.bidders:
+                valgoods.append(bidder.valdraw())
         return valgoods
+
+
+    def writeQtables(self):
+        for bidder in self.bidders:
+            bidder.writeQtable()
+        return None
 
 
     def simulateauction(self):
@@ -177,6 +191,7 @@ class auctionsimulator:
                 auctionclose = False
                 self.resethistories()
                 self.bidderreset(phase, runphase, maxrun)
+                self.auction.resetauction()
                 while auctionclose == False:
                     states = self.findstates()
                     bids = self.findbids(phase, states)
@@ -196,5 +211,6 @@ class auctionsimulator:
             phaseend = t.default_timer()
             phasetime = '{0:.{1}f}'.format(phaseend - phasestart, 1)
             print("Time used on ", phase,": ", phasetime, " seconds")
+        self.writeQtables()
         self.visualizeauctions(runtotal)
         return None

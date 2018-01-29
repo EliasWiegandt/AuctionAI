@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.stats import rankdata
 
-class payasyoubid:
+class payasyoubidauction:
     def __init__(self, ngoods = 1, minprice = 0):
         self.minprice = minprice
         self.ngoods = ngoods

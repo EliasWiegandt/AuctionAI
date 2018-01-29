@@ -59,8 +59,7 @@ class Bidder:
 
 
     def learn(self, state, action, reward):
-        if self.learning == True:
-            self.Q[state][str(action)] += self.alpha * (reward - self.Q[state][str(action)])
+        self.Q[state][str(action)] += self.alpha * (reward - self.Q[state][str(action)])
         return None
 
 
@@ -73,8 +72,9 @@ class Bidder:
 
 
     def chooseaction(self, phase, state, filteredbidspace):
-        if phase == "training" or \
-        (phase == "mixing" and random.uniform(0, 1) < self.epsilon):
+        if phase == "training" \
+        or self.learning == False \
+        or (phase == "mixing" and random.uniform(0, 1) < self.epsilon):
             bid = random.choice(filteredbidspace)
         else:
             maxval = max(self.Q[state].values())
