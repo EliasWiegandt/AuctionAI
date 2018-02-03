@@ -18,7 +18,7 @@ os.chdir(dname) # Set path to working directory
 
 np.random.seed(10)
 random.seed(a=10)
-printruns = False
+printruns = True
 visualize = False
 convtest = False
 
@@ -27,13 +27,14 @@ minprice = 25
 resprice = 20
 pricestep = 5
 
-alpha  = 0.001
-ntrain = 1000
+alpha  = 0.01
+ntrain = 10
 nmix   = 0
 ntest  = 0
 logsuf = ""
-bidspace = [0.0, 1.0, 2.0]
-valspace = [50]
+bidspace = [2.0, 1.0, 0.0]
+fixbidspace = [2.0, 1.0, 1.0, 0.0]
+valspace = [35]
 convtest = False
 convwin = 10000
 convstep = int(convwin / 100)
@@ -43,30 +44,33 @@ convsig = 0.01
 bidspace = [float(i) for i in bidspace]
 
 bidder1 = bc.Bidder(name = "bidder1",
-                     bidspace = bidspace,
-                     valspace = valspace,
-                     learning = True,
-                     alpha = alpha,
-                     logsuf = logsuf)
+                    fixbid = False,
+                    bidspace = bidspace,
+                    valspace = valspace,
+                    learning = True,
+                    alpha = alpha,
+                    logsuf = logsuf)
 
 bidder2 = bc.Bidder(name = "bidder2",
-                     bidspace = bidspace,
-                     valspace = valspace,
-                     learning = True,
-                     alpha = alpha,
-                     logsuf = logsuf)
+                    fixbid = True,
+                    bidspace = fixbidspace,
+                    valspace = valspace,
+                    learning = True,
+                    alpha = alpha,
+                    logsuf = logsuf)
 
 bidder3 = bc.Bidder(name = "bidder3",
-                     bidspace = bidspace,
-                     valspace = valspace,
-                     learning = True,
-                     alpha = alpha,
-                     logsuf = logsuf)
+                    bidspace = fixbidspace,
+                    fixbid = True,
+                    valspace = valspace,
+                    learning = True,
+                    alpha = alpha,
+                    logsuf = logsuf)
 
 bidders = [bidder1, bidder2, bidder3]
 
 # auction = pc.payasyoubidauction(ngoods = ngoods, minprice = minprice)
-# auction = sc.secondpriceauction(ngoods = ngoods, minprice = minprice)
+# auction = sc.secondpriceauction(bidders, ngoods = ngoods, minprice = minprice)
 auction = cc.combiclock(ngoods = ngoods,
                         minprice = minprice,
                         pricestep = pricestep,

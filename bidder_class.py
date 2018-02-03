@@ -14,7 +14,8 @@ class Bidder:
                  valspace,
                  learning = False,
                  alpha = 0.5,
-                 logsuf = ""
+                 logsuf = "",
+                 fixbid = False
                  ):
 
         self.learning = learning
@@ -24,23 +25,28 @@ class Bidder:
         self.valspace = valspace
         self.name = name
         self.logsuf = logsuf
+        self.fixbid = fixbid
 
-        self.history = []
+        self.bidhistory = []
+        self.statehistory = []
         self.epsilon = 1.0
         self.input = []
+        self.r = 0
 
         self.tblname = os.path.join("logs",self.name + self.logsuf + ".txt")
         self.tblfile = open(self.tblname, 'w')
         self.Qlogname = os.path.join("logs", self.name + "_Qlog" + self.logsuf + ".csv")
-        self.Qlogfields = [str(bid) for bid in sorted(self.bidspace)]
+        self.Qlogfields = [str(bid) for bid in sorted(list(set(self.bidspace)))]
         self.Qlogfields.insert(0, "runtotal")
         self.Qlogfields.insert(1, "phase")
+        self.Qlogfields.insert(2, "state")
         self.Qlogfile = open(self.Qlogname, 'w', newline='')
         self.Qlogwriter = csv.DictWriter(self.Qlogfile, fieldnames=self.Qlogfields)
         self.Qlogwriter.writeheader()
 
 
     def reset(self, phase, runphase = 0, maxrun = 1):
+        self.r = 0
         if phase == "testing":
             self.epsilon = 0
         elif phase == "mixing":
@@ -53,20 +59,24 @@ class Bidder:
 
     def buildstate(self, inputs):
         state = ("valspace: " + str(self.valspace),
-                 "history: " + str(self.history),
-                 "inputs: " + str(inputs))
+                 "history: " + str(self.bidhistory),
+                 "price: " + str(inputs))
         return state
 
 
-    def learn(self, state, action, reward):
-        self.Q[state][str(action)] += self.alpha * (reward - self.Q[state][str(action)])
+    def learn(self, state, bid, reward):
+        # self.Q[state][str(bid)] += self.alpha * (reward - self.Q[state][str(bid)])
+
+        # Remeber to update all paths leading to the current reward
+        for state, bid in zip(self.statehistory, self.bidhistory):
+            self.Q[state][str(bid)] += self.alpha * (reward - self.Q[state][str(bid)])
         return None
 
 
-    def createQ(self, state, validbids):
+    def createQ(self, state, filteredbidspace):
         if not state in self.Q:
             self.Q[state] = {}
-            for action in validbids:
+            for action in filteredbidspace:
                 self.Q[state][str(action)] = 0
         return
 
@@ -79,6 +89,13 @@ class Bidder:
         else:
             maxval = max(self.Q[state].values())
             bid = float(random.choice([key for key, val in self.Q[state].items() if val == maxval]))
+
+        # If set to fixbid:
+        if self.fixbid == True and len(self.bidspace) < (self.r + 1):
+            bid = self.bidspace[-1]
+        elif self.fixbid == True:
+            bid = self.bidspace[self.r]
+            self.r += 1
         return bid
 
 
@@ -99,7 +116,8 @@ class Bidder:
     def writeQlog(self, runtotal, phase):
         for state in self.Q:
             self.Qlogwriter.writerow(dict({"runtotal": runtotal,
-                                           "phase": phase},
+                                           "phase": phase,
+                                           "state": state},
                                            **self.Q[state]))
         return None
 
@@ -157,6 +175,6 @@ class Bidder:
 
 
     def updatehistory(self, state, bid):
-        entry = ("bid: ", bid)
-        self.history.append(entry)
+        self.bidhistory.append(bid)
+        self.statehistory.append(state)
         return None

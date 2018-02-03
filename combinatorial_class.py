@@ -20,8 +20,20 @@ class combiclock:
         In:  bidder (class)
         Out: validbids (list of valid actions of bidder filtered by auction criteria)
         """
-        validbids = bidder.bidspace
+        if self.r > 1:
+            lastbid = self.biddict[bidder.name][str(self.r - 1)]
+            validbids = []
+            for posbid in bidder.bidspace:
+                if posbid <= lastbid:
+                    validbids.append(posbid)
+        else:
+            validbids = bidder.bidspace
         return validbids
+
+
+    def findinput(self):
+        bidderinput = self.pricedict[str(self.r)]
+        return bidderinput
 
 
     def resetauction(self):
@@ -63,9 +75,11 @@ class combiclock:
         """
         # Place in dict
         round = str(self.r)
+        nbidders = len(self.bidders)
+        # print(bids)
 
         for bid, bidder in zip(bids, self.bidders):
-            self.biddict[bidder.name][round] = bid
+            self.biddict[bidder.name][str(self.r)] = bid
 
         # Find feasible combinations
         bidslist = []
@@ -77,7 +91,7 @@ class combiclock:
         # print(bidslist)
 
         permsfound = False
-        ciphers = len(self.bidders)
+        ciphers = nbidders
         base = self.r
         perm = [0] * ciphers
         permdict = {}
@@ -152,11 +166,21 @@ class combiclock:
 
         # Check if perm with highest value fits with closing criterions
         closingcriterion = True
-        for n in maxperm:
-            if n == 0:
+        for n in maxngoods:
+            if n == 0.0:
                 closingcriterion = False
+        if 0.0 not in bids:
+            # print("Is 0.0 in this shit?")
+            # print(bids)
+            closingcriterion = False
 
-        # If not: increase prices, run againg
+        # Unless all bids are zero, in which case the auction just closes
+        if sum(bids) == 0:
+            closingcriterion = True
+            maxngoods = [0.0] * nbidders
+            maxprices = [0.0] * nbidders
+
+        # If not: increase prices, run again
         if closingcriterion == False:
             self.r += 1
             # print("run again")

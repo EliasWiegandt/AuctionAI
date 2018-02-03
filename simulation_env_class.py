@@ -38,6 +38,11 @@ class auctionsimulator:
         self.globalbidspace = globalbidspace
 
 
+    def findinput(self):
+        bidderinput = self.auction.findinput()
+        return bidderinput
+
+
     def findstates(self, input = []):
         states = []
         for bidder in self.bidders:
@@ -75,11 +80,10 @@ class auctionsimulator:
         return None
 
 
-    def writeroundlog(self, runtotal, phase, bids, ngoods, prices, valgoods, rewards):
+    def writeroundlog(self, runtotal, phase, ngoods, prices, valgoods, rewards):
         self.log.writerunlog(self.bidders,
                              runtotal,
                              phase,
-                             bids,
                              ngoods,
                              prices,
                              valgoods,
@@ -118,11 +122,24 @@ class auctionsimulator:
         return None
 
 
-    def printinfo(self, runtotal, phase, bids, ngoods, prices, vgoods, rewards):
+    def printinfo(self, runtotal, phase, ngoods, prices, vgoods, rewards):
         if self.printruns:
+            bidslist = []
+            for bidder in self.bidders:
+                bidlist = []
+                # for key in range(len(self.auction.biddict[bidder.name])):
+                keylist = sorted([int(key) for key, value in self.auction.biddict[bidder.name].items()])
+                # print(keylist)
+                # print(self.auction.biddict[bidder.name])
+                # for key, value in self.auction.biddict[bidder.name].items():
+                for key in keylist:
+                    bidlist.append(self.auction.biddict[bidder.name][str(key)])
+                    # bidlist.append(value)
+                bidslist.append(bidlist)
+
             print("Trial ", runtotal)
             print("Phase: ", phase)
-            print("Bids: ", bids)
+            print("Bids: ", bidslist)
             print("Goods awarded: ", ngoods)
             print("Prices: ", prices)
             print("Values of goods:", vgoods)
@@ -157,7 +174,8 @@ class auctionsimulator:
 
     def resethistories(self):
         for bidder in self.bidders:
-            bidder.history = []
+            bidder.bidhistory = []
+            bidder.statehistory = []
         return None
 
 
@@ -193,21 +211,22 @@ class auctionsimulator:
                 self.bidderreset(phase, runphase, maxrun)
                 self.auction.resetauction()
                 while auctionclose == False:
-                    states = self.findstates()
+                    bidderinput = self.findinput()
+                    states = self.findstates(input = bidderinput)
                     bids = self.findbids(phase, states)
                     ngoods, prices, auctionclose = self.auctionrun(bids)
                     self.updatehistories(states, bids)
                 valgoods = self.findvalues()
                 rewards = self.findrewards(ngoods, prices, valgoods)
                 self.learn(states, bids, rewards)
-                self.writeroundlog(runtotal, phase, bids, ngoods, prices, valgoods, rewards)
+                self.writeroundlog(runtotal, phase, ngoods, prices, valgoods, rewards)
                 if phase == "training" \
                    and self.convtest == True \
                    and np.fmod(runphase + 1, self.convwin) == 0:
                     trainconv = self.checkconv(runtotal)
                 runphase += 1
                 runtotal += 1
-                self.printinfo(runtotal, phase, bids, ngoods, prices, valgoods, rewards)
+                self.printinfo(runtotal, phase, ngoods, prices, valgoods, rewards)
             phaseend = t.default_timer()
             phasetime = '{0:.{1}f}'.format(phaseend - phasestart, 1)
             print("Time used on ", phase,": ", phasetime, " seconds")
