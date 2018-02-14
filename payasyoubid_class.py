@@ -2,9 +2,35 @@ import numpy as np
 from scipy.stats import rankdata
 
 class payasyoubidauction:
-    def __init__(self, ngoods = 1, minprice = 0):
+    def __init__(self, bidders, ngoods = 1, minprice = 0):
         self.minprice = minprice
         self.ngoods = ngoods
+        self.biddict = {}
+        self.pricedict = {}
+        self.r = 1 # To be incremented
+        self.bidders = bidders
+
+
+    def resetauction(self):
+        self.r = 1
+        self.inibiddict()
+        self.inipricedict()
+        return None
+
+
+    def inibiddict(self):
+        for bidder in self.bidders:
+            self.biddict[bidder.name] = {}
+        return None
+
+
+    def inipricedict(self):
+        self.pricedict = {}
+        return None
+
+
+    def findinput(r):
+        return None
 
 
     def bidfilter(self, bidder):
@@ -23,6 +49,9 @@ class payasyoubidauction:
         In: List of bids
         Out: list of awarded blocks, list of prices
         """
+        for bid, bidder in zip(bids, self.bidders):
+            self.biddict[bidder.name][str(self.r)] = bid
+            
         boolbids = []
         for bid in bids:
             boolbids.append(bid >= self.minprice)
