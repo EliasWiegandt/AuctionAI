@@ -24,15 +24,15 @@ convtest = False
 
 ngoods = 4
 minprice = 25
-resprice = 20
+resprice = 25
 pricestep = 5
 
 alpha = 0.01
-ntrain = 1000
-nmix = 1000
-ntest = 1000
+ntrain = 10000
+nmix = 10000
+ntest = 10000
 logsuf = ""
-bidspace = [0.0, 1.0, 2.0]
+bidspace = [0.0, 1.0, 2.0, 3.0, 4.0]
 fixbidspace = [2.0, 1.0, 1.0, 0.0]
 valspace = [35]
 convtest = False
@@ -55,8 +55,8 @@ bidder1 = bc.Bidder(
 
 bidder2 = bc.Bidder(
     name="bidder2",
-    fixbid=True,
-    bidspace=fixbidspace,
+    fixbid=False,
+    bidspace=bidspace,
     valspace=valspace,
     learning=True,
     alpha=alpha,
@@ -64,8 +64,8 @@ bidder2 = bc.Bidder(
 
 bidder3 = bc.Bidder(
     name="bidder3",
-    bidspace=fixbidspace,
-    fixbid=True,
+    bidspace=bidspace,
+    fixbid=False,
     valspace=valspace,
     learning=True,
     alpha=alpha,

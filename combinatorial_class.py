@@ -88,7 +88,7 @@ class combiclock:
         permsfound = False
         ciphers = nbidders
         base = self.r
-        perm = [0] * ciphers
+        perm = [1] * ciphers
         permdict = {}
         permdict[str(0)] = perm
         permix = 1
@@ -147,39 +147,51 @@ class combiclock:
         # print(valdict)
         # Choose perm with highest value, random choice if several perms have the max value
         maxval = max(valdict.values())
-        maxvalpermix = random.choice([key for key, val in valdict.items() if val == maxval])
+        maxvalpermix_total = [key for key, val in valdict.items() if val == maxval]
 
-        maxperm = permdict[maxvalpermix]
-        maxval = valdict[maxvalpermix]
-        maxprices = feapricedict[maxvalpermix]
-        maxngoods = ngoodsdict[maxvalpermix]
+        # print("Vindende kombinationer")
+        # print(maxvalpermix_total)
+        # Remove any perms that include the "zero"-round:
+        maxvalpermix_allowed = []
+        for permix in maxvalpermix_total:
+            maxperm_candidate = permdict[permix]
+            if 0 in maxperm_candidate:
+                continue
+            else:
+                maxvalpermix_allowed.append(permix)
 
-        # print("Winning combination:")
-        # print(maxngoods)
-        # print(maxprices)
-        # print(maxval)
-
-        # Check if perm with highest value fits with closing criterions
-        closingcriterion = True
-        for n in maxngoods:
-            if n == 0.0:
-                closingcriterion = False
-        if 0.0 not in bids:
-            # print("Is 0.0 in this shit?")
-            # print("The bids-------------------------")
-            # print(bids)
-            closingcriterion = False
-
-        # Unless all bids are zero, in which case the auction just closes
-        if sum(bids) == 0 and closingcriterion == False:
+        if len(maxvalpermix_allowed) > 0:
+            maxvalpermix = random.choice(maxvalpermix_allowed)
+            maxperm = permdict[maxvalpermix]
+            maxval = valdict[maxvalpermix]
+            maxprices = feapricedict[maxvalpermix]
+            maxngoods = ngoodsdict[maxvalpermix]
+            # print("Winning combination:")
+            # print(maxngoods)
+            # print(maxprices)
+            # print(maxval)
             closingcriterion = True
-            maxngoods = [0.0] * nbidders
-            maxprices = [0.0] * nbidders
-
-        # If not: increase prices, run again
-        if closingcriterion == False:
+        else:
+            closingcriterion = False
             self.r += 1
-            # print("run again")
             self.pricedict[str(self.r)] = self.pricedict[round] + self.pricestep
+            maxngoods = None
+            maxprices = None
+
+
 
         return maxngoods, maxprices, closingcriterion
+
+        # if 0.0 not in bids:
+        # print("Is 0.0 in this shit?")
+        # print("The bids-------------------------")
+        # print(bids)
+        # closingcriterion = False
+
+        # Unless all bids are zero, in which case the auction just closes
+        # if sum(bids) == 0 and closingcriterion == False:
+        #     closingcriterion = True
+        #     maxngoods = [0.0] * nbidders
+        #     maxprices = [0.0] * nbidders
+
+        # If not: increase prices, run again
