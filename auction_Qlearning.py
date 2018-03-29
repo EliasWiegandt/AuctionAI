@@ -14,7 +14,7 @@ progstart = t.default_timer()
 
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
-os.chdir(dname) # Set path to working directory
+os.chdir(dname)  # Set path to working directory
 
 np.random.seed(10)
 random.seed(a=10)
@@ -27,10 +27,10 @@ minprice = 25
 resprice = 20
 pricestep = 5
 
-alpha  = 0.01
+alpha = 0.01
 ntrain = 1000
-nmix   = 10000
-ntest  = 10000
+nmix = 1000
+ntest = 1000
 logsuf = ""
 bidspace = [0.0, 1.0, 2.0]
 fixbidspace = [2.0, 1.0, 1.0, 0.0]
@@ -44,54 +44,59 @@ convsig = 0.01
 bidspace = [float(i) for i in bidspace]
 valspace = [float(i) for i in valspace]
 
-bidder1 = bc.Bidder(name = "bidder1",
-                    fixbid = False,
-                    bidspace = bidspace,
-                    valspace = valspace,
-                    learning = True,
-                    alpha = alpha,
-                    logsuf = logsuf)
+bidder1 = bc.Bidder(
+    name="bidder1",
+    fixbid=False,
+    bidspace=bidspace,
+    valspace=valspace,
+    learning=True,
+    alpha=alpha,
+    logsuf=logsuf)
 
-bidder2 = bc.Bidder(name = "bidder2",
-                    fixbid = True,
-                    bidspace = fixbidspace,
-                    valspace = valspace,
-                    learning = True,
-                    alpha = alpha,
-                    logsuf = logsuf)
+bidder2 = bc.Bidder(
+    name="bidder2",
+    fixbid=True,
+    bidspace=fixbidspace,
+    valspace=valspace,
+    learning=True,
+    alpha=alpha,
+    logsuf=logsuf)
 
-bidder3 = bc.Bidder(name = "bidder3",
-                    bidspace = fixbidspace,
-                    fixbid = True,
-                    valspace = valspace,
-                    learning = True,
-                    alpha = alpha,
-                    logsuf = logsuf)
+bidder3 = bc.Bidder(
+    name="bidder3",
+    bidspace=fixbidspace,
+    fixbid=True,
+    valspace=valspace,
+    learning=True,
+    alpha=alpha,
+    logsuf=logsuf)
 
 bidders = [bidder1, bidder2, bidder3]
 
 # auction = pc.payasyoubidauction(bidders, ngoods = ngoods, minprice = minprice)
 # auction = sc.secondpriceauction(bidders, ngoods = ngoods, minprice = minprice)
-auction = cc.combiclock(ngoods = ngoods,
-                        minprice = minprice,
-                        pricestep = pricestep,
-                        resprice = resprice,
-                        bidders = bidders)
+auction = cc.combiclock(
+    ngoods=ngoods,
+    minprice=minprice,
+    pricestep=pricestep,
+    resprice=resprice,
+    bidders=bidders)
 
 log = lc.auctionlog()
 
-simulator = se.auctionsimulator(auction = auction,
-                             bidders = bidders,
-                             log = log,
-                             ntrain = ntrain,
-                             nmix = nmix,
-                             ntest = ntest,
-                             convtest = convtest,
-                             convwin = convwin,
-                             convstep = convstep,
-                             convsig = convsig,
-                             printruns = printruns,
-                             visualize = visualize)
+simulator = se.auctionsimulator(
+    auction=auction,
+    bidders=bidders,
+    log=log,
+    ntrain=ntrain,
+    nmix=nmix,
+    ntest=ntest,
+    convtest=convtest,
+    convwin=convwin,
+    convstep=convstep,
+    convsig=convsig,
+    printruns=printruns,
+    visualize=visualize)
 
 setupend = t.default_timer()
 

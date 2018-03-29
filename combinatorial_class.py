@@ -68,11 +68,6 @@ class combiclock:
 
 
     def evaluate(self, bids):
-        """
-        Runs second-price auction where max one good can be awarded to each bidder
-        In: List of bids
-        Out: list of awarded blocks, list of prices
-        """
         # Place in dict
         round = str(self.r)
         nbidders = len(self.bidders)
@@ -171,11 +166,12 @@ class combiclock:
                 closingcriterion = False
         if 0.0 not in bids:
             # print("Is 0.0 in this shit?")
+            # print("The bids-------------------------")
             # print(bids)
             closingcriterion = False
 
         # Unless all bids are zero, in which case the auction just closes
-        if sum(bids) == 0:
+        if sum(bids) == 0 and closingcriterion == False:
             closingcriterion = True
             maxngoods = [0.0] * nbidders
             maxprices = [0.0] * nbidders
